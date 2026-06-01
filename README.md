@@ -29,24 +29,19 @@ git clone <this-repo>
 cd jruben-stone-ridge
 ```
 
-### Set up a Python virtual environment
-
-A virtual environment ("venv") is just an isolated folder that holds a Python interpreter and any packages you install for this project. Keeps the project's dependencies from polluting your system Python and vice versa. The `.venv/` folder is gitignored.
-
-```bash
-python3.13 -m venv .venv     # swap in python3.11 / python3.12 if that's what you have
-source .venv/bin/activate    # mac/linux; on windows it's .venv\Scripts\activate
-```
-
-You'll know it worked because your shell prompt picks up a `(.venv)` prefix. From here on, `python` and `pip` refer to the venv's copies. When you're done working on the project, run `deactivate` to leave it; come back in with `source .venv/bin/activate` next time.
-
 ### Install dependencies
 
 ```bash
 make install
 ```
 
-That just runs `pip install -r requirements.txt` inside the venv.
+That creates a local `.venv/` (using the `python3` already on your machine) and runs `pip install -r requirements.txt` into it. The `.venv/` folder is gitignored. Every other `make` target invokes `.venv/bin/python` directly, so you don't need to activate the venv to use them.
+
+If you'd rather invoke scripts directly (`python src/ingest.py ...`), activate the venv the usual way:
+
+```bash
+source .venv/bin/activate    # mac/linux; on windows: .venv\Scripts\activate
+```
 
 ### Create the Snowflake database
 

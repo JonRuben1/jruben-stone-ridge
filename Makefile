@@ -1,43 +1,50 @@
 .PHONY: install setup ingest stream eod backfill-eod schedule-eod unschedule-eod all demo test dashboard bulk-ingest clean
 
-install:
-	pip install -r requirements.txt
+VENV := .venv
+PY := $(VENV)/bin/python
+
+$(VENV)/bin/python:
+	python3 -m venv $(VENV)
+	$(VENV)/bin/python -m pip install --upgrade pip
+
+install: $(VENV)/bin/python
+	$(PY) -m pip install -r requirements.txt
 
 setup:
-	python src/setup.py
+	$(PY) src/setup.py
 
 ingest:
-	python src/ingest.py
+	$(PY) src/ingest.py
 
 stream:
-	python src/stream.py
+	$(PY) src/stream.py
 
 eod:
-	python src/eod.py
+	$(PY) src/eod.py
 
 backfill-eod:
-	python src/eod.py --backfill
+	$(PY) src/eod.py --backfill
 
 schedule-eod:
-	python src/install_task.py
+	$(PY) src/install_task.py
 
 unschedule-eod:
-	python src/install_task.py --suspend
+	$(PY) src/install_task.py --suspend
 
 all: setup ingest eod
 
 demo: all
-	streamlit run src/dashboard.py
+	$(PY) -m streamlit run src/dashboard.py
 
 test:
-	pytest tests/ -v
+	$(PY) -m pytest tests/ -v
 
 dashboard:
-	streamlit run src/dashboard.py
+	$(PY) -m streamlit run src/dashboard.py
 
 bulk-ingest:
 	@if [ -z "$(FILE)" ]; then echo "usage: make bulk-ingest FILE=path/to/file.csv"; exit 1; fi
-	python src/ingest_file.py $(FILE)
+	$(PY) src/ingest_file.py $(FILE)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
