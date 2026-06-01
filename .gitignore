@@ -1,0 +1,21 @@
+# Secrets (the .env file holds real credentials; .env.example is a tracked template)
+.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Logs from background services
+*.log
+*.pid
+
+# IDE
+.idea/
+.vscode/
