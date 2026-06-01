@@ -109,8 +109,8 @@ Runs `make all` first (so you see the EoD printout as proof the pipeline worked)
 | Command | What it does |
 |---|---|
 | `make setup` | Creates `prices` and `eod_price` in Snowflake. |
-| `make ingest` | REST-polls Coinbase for the most recent 1000 trades per product (BTC-USD and ETH-USD by default) and inserts them into `prices`. Pass `--pages N` via `python src/ingest.py --pages N` to paginate backwards for more history. |
-| `make stream` | Opens a WebSocket to Coinbase's `matches` channel and streams trades into `prices` in real time. Batches inserts (500 rows or every 5 seconds). Reconnects on drop with exponential backoff. Ctrl+C flushes the buffer and exits. |
+| `make ingest` | REST-polls Coinbase for the most recent 1000 trades per product (BTC-USD and ETH-USD by default) and inserts them into `prices`. Run `python src/ingest.py` directly for `--pages N` (more history) or `--products A,B,C` (different feeds). |
+| `make stream` | Opens a WebSocket to Coinbase's `matches` channel and streams trades into `prices` in real time. Batches inserts (500 rows or every 5 seconds). Reconnects on drop with exponential backoff. Ctrl+C flushes the buffer and exits. Run `python src/stream.py --products A,B,C` directly for a different set of feeds. |
 | `make bulk-ingest FILE=path/to/file.csv` | Loads a historical CSV into `prices`. Targets the CryptoDataDownload format by default; any CSV with a date or unix column plus a close or price column works. |
 | `make eod` | Runs the EoD `MERGE` (with the 2-day lookback) and prints the latest EoD per product. Exits non-zero with a helpful message if `eod_price` is empty. |
 | `make backfill-eod` | Runs the EoD `MERGE` without the lookback. Use this after `make bulk-ingest` to compute EoD across the full history in `prices`. The dashboard has a button that does the same thing. |
@@ -120,6 +120,17 @@ Runs `make all` first (so you see the EoD printout as proof the pipeline worked)
 | `make demo` | `make all` followed by `make dashboard`. The one-command "show me everything" path. |
 | `make test` | Runs the test suite. No Snowflake credentials needed. |
 | `make clean` | Removes Python cache directories. |
+
+### Adding or changing feeds
+
+The defaults are `BTC-USD,ETH-USD`. Both ingest paths accept a `--products` flag, comma-separated:
+
+```bash
+python src/ingest.py --products BTC-USD,ETH-USD,SOL-USD,DOGE-USD
+python src/stream.py --products BTC-USD,ETH-USD,SOL-USD
+```
+
+Any product id Coinbase exposes works (see [the Coinbase Exchange products list](https://api.exchange.coinbase.com/products)). No code change required, no schema change required — they all land in the same `prices` table differentiated by `product_id`.
 
 ## Keeping the pipeline running
 
@@ -173,5 +184,5 @@ Ingest just polls and stores; the EoD calc operates on whatever's already in `pr
 - Snowflake auth is username/password via env vars. Key-pair would be the production preference; password is enough here.
 - The reviewer creates the database and schema in Snowflake themselves. `setup.sql` only creates the two tables inside whatever schema `.env` points at.
 - Coinbase's public `/trades` endpoint and `wss://ws-feed.exchange.coinbase.com` don't require auth, so the pipeline doesn't carry a Coinbase key at all. If Coinbase ever moves these behind auth, that's a one-function change in `coinbase.py` and `stream.py`.
-- BTC-USD and ETH-USD are the two feeds. The set is a CLI flag (`--products`) on both `ingest.py` and `stream.py`, so adding more is one argument.
+- BTC-USD and ETH-USD are the default feeds; the set is configurable via `--products` (see "Adding or changing feeds" above).
 - One Snowflake user/role for V1. Multi-role RBAC is in the V2 list with a trigger; see `docs/design.md`.
