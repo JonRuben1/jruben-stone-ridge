@@ -20,7 +20,7 @@ order by product_id
 
 def run_eod(backfill: bool = False) -> list[tuple]:
     sql_file = "compute_eod_backfill.sql" if backfill else "compute_eod.sql"
-    merge_sql = Path(__file__).parent.joinpath(sql_file).read_text()
+    merge_sql = (Path(__file__).parent.parent / "sql" / sql_file).read_text()
     with snowflake_connection() as conn:
         cur = conn.cursor()
         for _ in conn.execute_string(merge_sql):

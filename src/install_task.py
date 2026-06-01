@@ -16,7 +16,7 @@ SCHEDULE = "USING CRON 5 17 * * * America/New_York"
 
 
 def install_sql() -> str:
-    merge_sql = Path(__file__).parent.joinpath("compute_eod.sql").read_text().strip().rstrip(";")
+    merge_sql = (Path(__file__).parent.parent / "sql" / "compute_eod.sql").read_text().strip().rstrip(";")
     return f"""
 create or replace task {TASK_NAME}
   warehouse = compute_wh

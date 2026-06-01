@@ -109,7 +109,7 @@ Runs `make all` first (so you see the EoD printout as proof the pipeline worked)
 | Command | What it does |
 |---|---|
 | `make setup` | Creates `prices` and `eod_price` in Snowflake. |
-| `make ingest` | REST-polls Coinbase for the most recent 1000 trades per product (BTC-USD and ETH-USD by default) and inserts them into `prices`. Pass `--pages N` via `python ingest.py --pages N` to paginate backwards for more history. |
+| `make ingest` | REST-polls Coinbase for the most recent 1000 trades per product (BTC-USD and ETH-USD by default) and inserts them into `prices`. Pass `--pages N` via `python src/ingest.py --pages N` to paginate backwards for more history. |
 | `make stream` | Opens a WebSocket to Coinbase's `matches` channel and streams trades into `prices` in real time. Batches inserts (500 rows or every 5 seconds). Reconnects on drop with exponential backoff. Ctrl+C flushes the buffer and exits. |
 | `make bulk-ingest FILE=path/to/file.csv` | Loads a historical CSV into `prices`. Targets the CryptoDataDownload format by default; any CSV with a date or unix column plus a close or price column works. |
 | `make eod` | Runs the EoD `MERGE` (with the 2-day lookback) and prints the latest EoD per product. Exits non-zero with a helpful message if `eod_price` is empty. |
@@ -134,7 +134,7 @@ For each `(product_id, trade_date)`, the EoD price is the price of the last trad
 The pipeline assumes continuous polling. In production you'd run `make ingest` every few minutes via cron and `make eod` once after 17:00 ET. On a one-shot fresh-setup run, you only have ~3 minutes of data (the latest 1000 trades), so two cases are worth knowing:
 
 - If the latest 1000 trades all happened before 17:00 ET today, `make eod` will produce a row.
-- If the latest 1000 trades all happened after 17:00 ET (likely if you're running this late in the evening), the EoD query finds nothing and `eod_price` stays empty. Fix it with `python ingest.py --pages 50` to paginate backwards far enough to include pre-17:00 trades, then rerun `make eod`. Or run `make stream` for a while.
+- If the latest 1000 trades all happened after 17:00 ET (likely if you're running this late in the evening), the EoD query finds nothing and `eod_price` stays empty. Fix it with `python src/ingest.py --pages 50` to paginate backwards far enough to include pre-17:00 trades, then rerun `make eod`. Or run `make stream` for a while.
 
 Ingest just polls and stores; the EoD calc operates on whatever's already in `prices`. The non-zero exit on an empty `eod_price` is intentional and points you at the fix.
 
@@ -145,18 +145,20 @@ Ingest just polls and stores; the EoD calc operates on whatever's already in `pr
 ├── README.md
 ├── Makefile
 ├── requirements.txt
-├── conn.py              # build a Snowflake connection from env vars
-├── coinbase.py          # fetch_prices(product_id, pages=N) over REST
-├── setup.py             # runs setup.sql
-├── setup.sql            # DDL for prices and eod_price
-├── ingest.py            # polls Coinbase /trades, inserts into prices
-├── ingest_file.py       # loads a historical CSV into prices
-├── stream.py            # streams Coinbase matches over WebSocket into prices
-├── eod.py               # runs compute_eod.sql (or --backfill), prints latest EoD
-├── install_task.py      # installs the Snowflake Task that runs EoD daily at 17:05 ET
-├── compute_eod.sql      # the EoD MERGE (2-day lookback, for scheduled runs)
-├── compute_eod_backfill.sql  # same MERGE, no lookback (for historical loads)
-├── dashboard.py         # Streamlit UI over prices + eod_price
+├── src/
+│   ├── conn.py              # build a Snowflake connection from env vars
+│   ├── coinbase.py          # fetch_prices(product_id, pages=N) over REST
+│   ├── setup.py             # runs sql/setup.sql
+│   ├── ingest.py            # polls Coinbase /trades, inserts into prices
+│   ├── ingest_file.py       # loads a historical CSV into prices
+│   ├── stream.py            # streams Coinbase matches over WebSocket into prices
+│   ├── eod.py               # runs sql/compute_eod.sql (or --backfill), prints latest EoD
+│   ├── install_task.py      # installs the Snowflake Task that runs EoD daily at 17:05 ET
+│   └── dashboard.py         # Streamlit UI over prices + eod_price
+├── sql/
+│   ├── setup.sql                 # DDL for prices and eod_price
+│   ├── compute_eod.sql           # the EoD MERGE (2-day lookback, for scheduled runs)
+│   └── compute_eod_backfill.sql  # same MERGE, no lookback (for historical loads)
 ├── docs/                # Part 1 design + Part 2 design notes
 └── tests/               # unit + SQL tests (DuckDB-backed)
 ```

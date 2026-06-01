@@ -124,7 +124,7 @@ A few things to call out:
 - Each poll just appends to `prices`. Dedup happens inside the EoD calc itself (which picks one row per `(product_id, trade_date)`), so re-running ingest is safe.
 - A trade that arrives late but is still within the lookback window (last 2 days) gets picked up on the next `MERGE` automatically.
 - A trade that's older than the lookback would need a rerun of the `MERGE` for that date, which is a one-line predicate change.
-- If `prices` doesn't yet have any pre-17:00 ET data for the current trading day (likely on a fresh setup with one poll), `eod.py` exits non-zero with a clear message pointing at `python ingest.py --pages N` (or `python eod.py --backfill` for the historical-CSV case). The non-zero exit is the contract: it fails loudly so cron and the Snowflake Task don't silently swallow an empty result.
+- If `prices` doesn't yet have any pre-17:00 ET data for the current trading day (likely on a fresh setup with one poll), `eod.py` exits non-zero with a clear message pointing at `python src/ingest.py --pages N` (or `python src/eod.py --backfill` for the historical-CSV case). The non-zero exit is the contract: it fails loudly so cron and the Snowflake Task don't silently swallow an empty result.
 
 ## Repo layout
 
@@ -133,19 +133,21 @@ A few things to call out:
 ├── README.md
 ├── Makefile
 ├── requirements.txt
-├── conn.py                   # build Snowflake connection from env
-├── coinbase.py               # fetch_prices(product_id, pages=N)
-├── setup.py                  # runs setup.sql
-├── setup.sql                 # DDL for prices + eod_price
-├── ingest.py                 # polls Coinbase /trades, inserts into prices
-├── ingest_file.py            # loads a historical CSV into prices
-├── stream.py                 # streams Coinbase matches over WebSocket into prices
-├── eod.py                    # runs compute_eod.sql (or --backfill), prints latest EoD
-├── compute_eod.sql           # the EoD MERGE (2-day lookback, scheduled runs)
-├── compute_eod_backfill.sql  # same MERGE, no lookback (one-shot historical loads)
-├── install_task.py           # installs the Snowflake Task that runs the EoD MERGE daily at 17:05 ET
-├── dashboard.py              # Streamlit UI over prices + eod_price, with CSV drop and backfill button
-└── tests/                    # unit + SQL tests (DuckDB-backed)
+├── src/
+│   ├── conn.py                   # build Snowflake connection from env
+│   ├── coinbase.py               # fetch_prices(product_id, pages=N)
+│   ├── setup.py                  # runs sql/setup.sql
+│   ├── ingest.py                 # polls Coinbase /trades, inserts into prices
+│   ├── ingest_file.py            # loads a historical CSV into prices
+│   ├── stream.py                 # streams Coinbase matches over WebSocket into prices
+│   ├── eod.py                    # runs sql/compute_eod.sql (or --backfill), prints latest EoD
+│   ├── install_task.py           # installs the Snowflake Task that runs the EoD MERGE daily at 17:05 ET
+│   └── dashboard.py              # Streamlit UI over prices + eod_price, with CSV drop and backfill button
+├── sql/
+│   ├── setup.sql                 # DDL for prices + eod_price
+│   ├── compute_eod.sql           # the EoD MERGE (2-day lookback, scheduled runs)
+│   └── compute_eod_backfill.sql  # same MERGE, no lookback (one-shot historical loads)
+└── tests/                        # unit + SQL tests (DuckDB-backed)
 ```
 
 Someone reading this should be able to clone the repo, fill in their Snowflake credentials in `.env`, run `make all`, and see an EoD price come out the other end. `make dashboard` brings up the Streamlit UI on top of the same tables for poking at the data, and `make schedule-eod` wires the daily MERGE to a Snowflake Task so the whole thing keeps running without anyone at a keyboard.

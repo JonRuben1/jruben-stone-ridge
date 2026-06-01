@@ -4,40 +4,40 @@ install:
 	pip install -r requirements.txt
 
 setup:
-	python setup.py
+	python src/setup.py
 
 ingest:
-	python ingest.py
+	python src/ingest.py
 
 stream:
-	python stream.py
+	python src/stream.py
 
 eod:
-	python eod.py
+	python src/eod.py
 
 backfill-eod:
-	python eod.py --backfill
+	python src/eod.py --backfill
 
 schedule-eod:
-	python install_task.py
+	python src/install_task.py
 
 unschedule-eod:
-	python install_task.py --suspend
+	python src/install_task.py --suspend
 
 all: setup ingest eod
 
 demo: all
-	streamlit run dashboard.py
+	streamlit run src/dashboard.py
 
 test:
 	pytest tests/ -v
 
 dashboard:
-	streamlit run dashboard.py
+	streamlit run src/dashboard.py
 
 bulk-ingest:
 	@if [ -z "$(FILE)" ]; then echo "usage: make bulk-ingest FILE=path/to/file.csv"; exit 1; fi
-	python ingest_file.py $(FILE)
+	python src/ingest_file.py $(FILE)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +

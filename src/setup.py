@@ -5,7 +5,7 @@ from conn import snowflake_connection
 
 
 def main() -> None:
-    sql = Path(__file__).parent.joinpath("setup.sql").read_text()
+    sql = (Path(__file__).parent.parent / "sql" / "setup.sql").read_text()
     with snowflake_connection() as conn:
         for stmt in conn.execute_string(sql):
             pass
