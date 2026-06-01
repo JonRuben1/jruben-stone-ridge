@@ -44,8 +44,8 @@ def main() -> int:
         print(
             "no EoD rows in eod_price. either no prices have been ingested yet, "
             "or the ingested prices are all at/after 17:00 ET on their respective days. "
-            "run `python ingest.py --pages 20` to backfill some pre-17:00 ET data and rerun, "
-            "or `python eod.py --backfill` if you loaded a historical CSV."
+            "run `python src/ingest.py --pages 20` to backfill some pre-17:00 ET data and rerun, "
+            "or `python src/eod.py --backfill` if you loaded a historical CSV."
         )
         return 1
 

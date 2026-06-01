@@ -79,7 +79,7 @@ latest_eod = query("""
 """)
 
 if latest_eod.empty:
-    st.warning("No EoD rows yet. Run `make ingest` (or `python ingest.py --pages 200` for a deeper backfill) and `make eod`.")
+    st.warning("No EoD rows yet. Run `make ingest` (or `python src/ingest.py --pages 200` for a deeper backfill) and `make eod`.")
 else:
     cols = st.columns(len(latest_eod))
     for col, (_, row) in zip(cols, latest_eod.iterrows()):

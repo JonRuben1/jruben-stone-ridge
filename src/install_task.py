@@ -3,7 +3,7 @@
 Reads compute_eod.sql so the SQL stays single-sourced. `create or replace task`
 makes this safe to rerun any time the MERGE body changes.
 
-Run `python install_task.py --suspend` to pause the task without dropping it.
+Run `python src/install_task.py --suspend` to pause the task without dropping it.
 """
 import argparse
 import sys
